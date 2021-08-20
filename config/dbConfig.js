@@ -1,29 +1,44 @@
 
-const mysql = require('mysql2')
+// Option 2: Passing parameters separately (other dialects)
+const fs = require('fs');
 
+module.exports = {
+  development: {
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || '',
+    database: process.env.DB_DATABASE || 'Nyumba',
 
-// Get the Host from Environment or use default
-const host = process.env.DB_HOST || 'localhost';
-
-// Get the User for DB from Environment or use default
-const user = process.env.DB_USER || 'root';
-
-// Get the Password for DB from Environment or use default
-const password = process.env.DB_PASS || '';
-
-// Get the Database from Environment or use default
-const database = process.env.DB_DATABASE || 'Nyumba';
-
-// Create the connection with required details
-const dbConfig = mysql.createConnection({
-  host, user, password, database,
-});
-
-dbConfig.connect((err)=>{
-    if(err){
-        console.log(err)
+    host: '127.0.0.1',
+    port: 3306,
+    dialect: 'mysql',
+    dialectOptions: {
+      bigNumberStrings: true
     }
-    console.log('connected')
-})
+  },
+  test: {
+    username: process.env.CI_DB_USERNAME,
+    password: process.env.CI_DB_PASSWORD,
+    database: process.env.CI_DB_NAME,
+    host: '127.0.0.1',
+    port: 3306,
+    dialect: 'mysql',
+    dialectOptions: {
+      bigNumberStrings: true
+    }
+  },
+  production: {
+    username: process.env.PROD_DB_USERNAME,
+    password: process.env.PROD_DB_PASSWORD,
+    database: process.env.PROD_DB_NAME,
+    host: process.env.PROD_DB_HOSTNAME,
+    port: process.env.PROD_DB_PORT,
+    dialect: 'mysql',
+    dialectOptions: {
+      bigNumberStrings: true,
+      // ssl: {
+      //   ca: fs.readFileSync(__dirname + '/mysql-ca-master.crt')
+      // }
+    }
+  }
+};
 
-module.exports = dbConfig

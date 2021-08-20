@@ -1,103 +1,265 @@
-const conn = require('../config/dbConfig');
-const fn = require('../models/functions')
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const ErrorResponse = require('../utils/errorResponse');
+const asyncHandler = require('../middlewares/async');
+// const sendEmail = require('../utils/sendEmail');
+const { User }= require('../database/models');
+const func = require('../helpers/functions');
+const util = require('../utils')
 
-const self = {}
+const log = util.Logger
 
-//register a client
-self.RegisterUser = (req, res, next)=>{
-  //const { username,email,pasword } = req.body;
-  conn.query(
-    `SELECT * FROM User_account WHERE Username = ${fn.sql_escape(req.body.username)} AND User_email =${fn.sql_escape(req.body.email)};`,
-    (err, result) => {
-      if (result.length) {
-        return res.status(409).send({
-          msg: 'Username is already in use!'
-        });
-      }
-       else {
-        // username is available
-        bcrypt.hash(req.body.password, 10, (err, hash) => {
-          if (err) {
-            return res.status(500).send({
-              msg: err
-            });
-          } else {
-            // has hashed pw => add to database
-            const sql =`INSERT INTO User_account(Username, password,User_email)
-             VALUES (${fn.sql_escape(req.body.username)},
-            ${fn.sql_escape(hash)},${fn.sql_escape(req.body.email)})`
-            conn.query(sql,
-              (err, result) => {
-                if (err) {
-                  throw err;
-                  return res.status(400).send({
-                    msg: err
-                  });
-                }
-                return res.status(201).json({
-                  success:true,
-                  data:result,
-                  msg: 'Registered!'
+const auth = {}
+
+// @desc      Register user
+// @route     POST /api/v1/auth/register
+// @access    Public
+auth.register = asyncHandler(async (req, res, next) => {
+      const { username, email, contact, u_password } = req.body;
+       // #hash the user password
+      
+
+      try{
+       const usr = await User.findOne({where: {email:email}})
+        // --------------------------------------Create user
+        if(!usr){
+
+           func.password_hash(u_password).then(password=>{
+               const user =  User.create({
+                username,
+                email,
+                contact,
+                password
+                  // role
                 });
-              }
-            );
-          }
-        });
-      }
-    }
-  );
-}
-self.LoginUser =(req,res,next)=>{
-  conn.query(
-    `SELECT * FROM User_account WHERE User_email = ${fn.sql_escape(req.body.email)};`,
-    (err, result) => {
-      // user does not exists
-      if (err) {
-        return res.status(400).send({
-          msg: err
-        });
-      }
-      if (!result.length) {
-        return res.status(401).json({
-          success:false,
-          msg: 'Account not found! Please register to login'
-        });
-      }
-      // check password
-      bcrypt.compare(
-        req.body.password,
-        result[0]['password'],
-        (bErr, bResult) => {
-          // wrong password
-          if (bErr) {
-            return res.status(401).send({
-              msg: 'Email or password is incorrect!'
-            });
-          }
-          if (bResult) {
-            const token = jwt.sign({
-                username: result[0].username,
-                userId: result[0].id
-              },
-              'Sc34RE', {
-                expiresIn: '7d'
-              }
-            );
-            return res.status(200).send({
-              msg: 'Logged in!',
-              token,
-              user: result[0]
-            });
-          }
-          return res.status(401).send({
-            msg: 'Username or password is incorrect!'
-          });
-        }
-      );
-    }
-  );
-}
 
-module.exports = self;
+               return res.status(201).json({
+                  success:true,
+                  message:'user created'
+                })
+
+           }).catch(e => {
+              return res.status(500).json(e)
+           })
+
+            
+
+        }else{
+          return res.status(403).json({
+            success:false,
+            message:'user already exists'
+          })
+        }
+        
+    }catch(e){
+        return res.status(500).json({
+          success:false,
+          error:e
+        })
+
+    }
+});
+
+// @desc      Login user
+// @route     POST /api/v1/auth/login
+// @access    Public
+auth.login = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  // --------------------------------Validate emil & password
+  if (!email || !password) {
+    return next(new ErrorResponse('Please provide an email and password', 400));
+  }
+
+  // -----------------------------------------------Check for user
+  const user = await User.findOne({ where:{email:email}});
+
+  if (!user) {
+    return next(new ErrorResponse('Invalid credentials', 401));
+  }
+
+  // -----------------------------------------Check if password matches
+  const isMatch = await func.comparePassword(password,user.password);
+
+  if (!isMatch) {
+    return next(new ErrorResponse('Invalid credentials', 401));
+  }
+
+  sendTokenResponse(user, 200, res);
+});
+
+// @desc      Log user out / clear cookie
+// @route     GET /api/v1/auth/logout
+// @access    Private
+auth.logout = asyncHandler(async (req, res, next) => {
+  res.cookie('token', 'none', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true
+  });
+
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
+});
+
+// @desc      Get current logged in user
+// @route     POST /api/v1/auth/me
+// @access    Private
+auth.getMe = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({
+    where: {user_id: req.params.user_id }
+  });
+
+  res.status(200).json({
+    success: true,
+    data: user
+  });
+});
+
+// @desc      Update user details
+// @route     PUT /api/v1/auth/updatedetails
+// @access    Private
+auth.updateDetails = asyncHandler(async (req, res, next) => {
+  const fieldsToUpdate = {
+    username: req.body.name,
+    email: req.body.email,
+    contact:req.body.contact
+  };
+
+  // console.log(req.user)
+  const user = await User.findOne({
+    where :{ user_id: req.user.id }
+  });
+
+  if(user){
+    await user.set(fieldsToUpdate)
+    await user.save()
+
+  }
+
+  res.status(200).json({
+    success: true,
+    data: user
+  });
+});
+
+// @desc      Update password
+// @route     PUT /api/v1/auth/updatepassword
+// @access    Private
+auth.updatePassword = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({where:{user_id: req.user.id }})
+
+  // Check current password
+  if (!(await func.comparePassword(req.body.currentPassword,user.password))) {
+     return res.status(401).json({error:'password is incorrect'})
+  }
+
+  user.password = req.body.newPassword;
+  await user.save();
+
+  sendTokenResponse(user, 200, res);
+});
+
+// @desc      Forgot password
+// @route     POST /api/v1/auth/forgotpassword
+// @access    Public
+auth.forgotPassword = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ where:{email: req.body.email} });
+
+  if (!user) {
+    return res.status(404).json({error:'password is incorrect'})
+  }
+
+  // Get reset token
+  const resetToken = func.getResetPasswordToken(user.user_id);
+
+  await user.save();
+
+  // Create reset url
+  const resetUrl = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/auth/resetpassword/${resetToken}`;
+
+  const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+
+  try {
+    await util.sendEmail({
+      email: user.email,
+      subject: 'Password reset token',
+      message
+    });
+
+    res.status(200).json({ success: true, data: 'Email sent' });
+  } catch (e) {
+    log.error(e);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    return next(new ErrorResponse('Email could not be sent', 500));
+  }
+
+  res.status(200).json({
+    success: true,
+    data: user
+  });
+});
+
+// @desc      Reset password
+// @route     PUT /api/v1/auth/resetpassword/:resettoken
+// @access    Public
+auth.resetPassword = asyncHandler(async (req, res, next) => {
+  // Get hashed token
+  const resetPasswordToken = crypto
+    .createHash('sha256')
+    .update(req.params.resettoken)
+    .digest('hex');
+
+  const user = await User.findOne({
+   where:{ 
+       resetPasswordToken:resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() }
+       } 
+  });
+
+  if (!user) {
+    return next(new ErrorResponse('Invalid token', 400));
+  }
+
+  // Set new password
+  user.password = req.body.password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save();
+
+  sendTokenResponse(user, 200, res);
+});
+
+// Get token from model, create cookie and send response
+const sendTokenResponse = (user, statusCode, res) => {
+  // Create token
+  const token = func.getSignedJwtToken(user.user_id);
+
+  const options = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true
+  };
+
+  if (process.env.NODE_ENV === 'production') {
+    options.secure = true;
+  }
+
+  res
+    .status(statusCode)
+    .cookie('token', token, options)
+    .json({
+      success: true,
+      token
+    });
+};
+
+
+module.exports = auth

@@ -1,51 +1,71 @@
-const express = require('express')
-const morgan  = require('morgan');
-const dotenv = require('dotenv');
-const bodyparser = require('body-parser');
-const cors = require('cors');
-const helmet = require('helmet');
-
-const db = require('./config/dbConfig');
-const { Errors ,uploadError} = require('./middlewares/middleware');
-
-const clients_api = require('./routes/api/clients')
-const property = require('./routes/api/property')
-const auth_api = require('./routes/auth/auth')
-
-dotenv.config({path:'./config/.env'});
-
-const server = express();
+/**
+* Nyumba App Server
+*
+* We serve web logic with Express and the database at the same origin.
+*
+**/
+const fs = require('fs-extra')
+const path = require('path')
+fs.ensureDirSync(path.resolve(__dirname, '../logs'))
 
 
-server.use(express.json());
-server.use(bodyparser.urlencoded({extended: false}));
+const http = require('http')
+const https = require('https')
+const app = require('./server')
+const util = require('./utils')
 
-server.use(morgan('common'));
-server.use(cors({
-    origin:process.env.CORS_ORIGIN
-}));
-
-server.use(helmet());
+const log = util.Logger
 
 
-server.use('/api/clients/', clients_api);
-server.use('/auth', auth_api);
-server.use('/api/property',property)
 
-const PORT = process.env.PORT || 3000;
+// ----------------------------------------------------------------------
+/**
+* Start HTTP Server
+*/
+const startServer = () => {
+    return new Promise((resolve, reject) => {
+          let secureServer = null
+          try {
+           
 
-//file upload err
-server.use(Errors.uploadErr)
+            // secureServer = https.createServer(credentials, app)
+        } catch (e) {
 
-//return original url where error occured
-server.use(Errors.NotFound);
+            reject(e)
+        }
+        // start the web server with built-in database solution
+        let httpServer = http.createServer(app)
+        // secureServer.listen(util.getHttpsPort(), () => {
+            let stdServer = httpServer.listen(util.getHttpPort(), () => {
+                log.info(`${util.logPrefix('web')} standard port = ${util.getHttpPort()}`)
+                // console.log(`${util.logPrefix('web')} standard port = ${util.getHttpPort()}`)
+                if (secureServer) {
+                    log.info(`${util.logPrefix('web')} secure port = ${util.getHttpsPort()}`)
+                    //  console.log(`${util.logPrefix('web')} secure port = ${util.getHttpsPort()}`)
+                } else {
+                    log.warn(`${util.logPrefix('web')} falling back to http for local development...`)
+                    // console.log(`${util.logPrefix('web')} falling back to http for local development...`)
+                }
+            
+                resolve(secureServer || stdServer)
+            })
+        // })
+    })
+}
 
-//error handler middleware
-server.use(Errors.errorHandler);
 
 
-const serve =server.listen(PORT,()=>{
-  const host = serve.address().address
-  const port = serve.address().port
-  console.log(`server is running in ${process.env.NODE_ENV} mode on http://${host}:${port}`);
-});
+
+// restores an existing database or backs up existing one
+startServer()
+    .then((server) => {
+        // return setupDatabase(server, app)
+        //handle database sync here
+        // you can chain multiple .then()
+    })
+    .catch((e) => {
+        // console.log('Failed to start server:')
+        log.error('Failed to start server:')
+        log.error(e)
+        // console.log(e)
+    })

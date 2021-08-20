@@ -5,43 +5,35 @@ const fn = require('../models/functions')
 
 
 exports.addproperty = async(req,res,next)=>{
-  
-          
-             const prop_name = req.body.prop_name ;
-             const prop_image = req.body.prop_image;
-             const description = req.body.description;
-             const area= req.body.location
-             const type = req.body.type
-             const address = req.body.address
-             const category = req.body.category
-             const owner = req.body.owner
-             const price =req.body.price
 
+      
+          try {
 
-              return new Promise((resolve,reject)=>{
-                    const sql =`INSERT INTO Property SET property_name =${fn.sql_escape(prop_name)},image_uri =${fn.sql_escape(prop_image)},description = ${fn.sql_escape(description)},PropertyPrice =${fn.sql_escape(price)},PropertyAddress =${fn.sql_escape(address)},propertytype = ${fn.sql_escape(type)},category = ${category},propertyAgent =${fn.sql_escape(owner)},area = ${area}`;
-                  
-                    //const sql =`INSERT INTO Property(property_name,image_uri,description,PropertyPrice,PropertyAddress,propertytype,category,propertyAgent,area)
-                    // VALUES(?,?,?,?,?,?,?,?,?)`
-                    conn.query(sql,[prop_name,type,prop_image,description,area,owner,address,category,price]
-                      ,(err,result)=>{
-                        //let data =[];
-                        if(err){
-                          reject(err=>{
-                            return res.send({
-                              success:false,
-                              error:err
+            const prop_name = req.body.prop_name ;
+            const prop_image = req.body.prop_image;
+            const description = req.body.description;
+            const area= req.body.location
+            const type = req.body.type
+            const address = req.body.address
+            const category = req.body.category
+            const owner = req.body.owner
+            const price =req.body.price
+            const refno = fn.generate_Randno()
 
-                            })
-                          })
-                        }
-              
-                        resolve(result)
-              })
+            const data = await prop.insertProp(prop_name,type,prop_image,description,area,owner,address,category,price,refno)
+               
+                 return res.status(201).json({
+                    success: true,
+                    data:data
+                 })
+            
+          } catch (e) {
+            return res.status(500).json({
+              success:false,
+              error:`${e}`
             })
-
-
-     
+            
+          }   
 }
 
 /*
@@ -71,7 +63,7 @@ exports.listProperties = (req, res, next)=>{
          
 
 }
-
+//latest properties
 exports.latestProps = async(req ,res,next)=>{
       let props;
       try{
@@ -122,38 +114,28 @@ exports.editFeat = async (req, res,next)=>{
 
 //update property
 exports.updateProps = async(req , res ,next)=>{
-     const type = req.body.type|| ""
-     const name = req.body.name || ""
-     const contacts = req.body.image_uri  || ""
-     const location = req.body.location || ""
 
-     const data = {
-     	type:type,
-     	name:name,
-     	contacts:contacts,
-     	location:location
-     }
+  const { prop_name,prop_image ,description,price,location,type,address,category,owner} = req.body || ""  
+  
 
     let updated;
           try {
 
-            updated = await prop.updateProperty(req.params.id,data)
-             if(!updated){
-               return res.json({
-                 success:false,
-                 msg:"update unsuccessfull"
-               })
-             }
+            updated = await prop.updateTblData(req.params.id,"Property",prop_name,prop_image ,description,location,type,address,price,category,owner)
              return res.status(201).json({
               success:true,
-              data:updated
+              data:updated,
+              msg:'successfull'
             });
           }catch(e){
-            next(e)
+            return res.status(500).json({
+              success:false,
+              error:`${e.stack}`
+            })
           }
 }
 
-
+//add features
 exports.addFeature = async(req, res,next)=>{
    const { feature, description } = req.body;
 
@@ -287,15 +269,14 @@ exports.PropertyFacility = async(req,res,next)=>{
 exports.getPropertyFacility = (req,res,next)=>{
      prop.getPropertyFacility(req.params.id,(err,rows)=>{
       if(err){
-        return res.status(400).send({
-          success:false,
-          error:err
-        })
+        next(err)
       }
+     if(rows){
       return res.status(200).send({
         success:true,
-        data:rows.length
+        data:rows
       })
+     }
     })
    
 }
@@ -322,7 +303,7 @@ exports.Addcategory = async(req ,res ,next)=>{
 //image uploads with multer
 exports.UploadImages = ( req ,res,next)=>{
         try {
-          const photos = req.files;
+          const photos = req.body.files;
 
           // check if photos are available
           if (!photos) {
@@ -339,13 +320,27 @@ exports.UploadImages = ( req ,res,next)=>{
                   mimetype: p.mimetype,
                   size: p.size
               }));
+               prop.getByValue('Property','prop_refno',req.params.id,(err,rows)=>{
+               if(err) throw err
+                if(rows.length){
+                  const id = rows[0]['id']
+                  console.log(id)
+                  prop.uploadPhoto(photos,id)
+                  // send response
+                  res.status(200).send({
+                    success: true,
+                    message: 'Photos are uploaded.',
+                    data: data
+                });
+                }
+             })
+          //    res.status(200).send({
+          //     success: true,
+          //     message: 'Photos are uploaded.',
+          //     data: data
+          // });
 
-              // send response
-              res.status(200).send({
-                  success: true,
-                  message: 'Photos are uploaded.',
-                  data: data
-              });
+             
           }
 
       } catch (e) {
@@ -376,6 +371,28 @@ exports.listPropertyArea = (req ,res,next)=>{
       });
 }
 
+//list properties by by owner
+exports.listPropertyOwner = (req ,res,next)=>{
+  
+  prop.getOwnerProperty(req.params.owner,(err,results)=>{
+    let properties = []
+    if(!err){
+      results.forEach(row=>{
+        properties.push(row)
+       })
+      return res.status(200).json({
+        success:true,
+        count:properties.length,
+        data:properties
+       })
+    }
+    else{
+      next(err)
+    }
+    
+    
+  });
+}
 
 exports.country = async(req ,res ,next)=>{
       const { country } = req.body;
