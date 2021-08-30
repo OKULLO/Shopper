@@ -1,19 +1,16 @@
 
 const util = require('./utils')
-// const models = require('./models');
 
+//initialize logger
 const log = util.Logger
 
 
-
-module.exports = (db)=> {
+module.exports = async (db)=> {
 
 		try{
 
-			await db.sequelize.authenticae()
-			log.info(`${util.logPrefix('db')} connection error successful`)
-
-          db.sequelize.sync()
+			await db.sequelize.authenticate()
+			log.info(`${util.logPrefix('db')} connection successful`)
 
 
 		}catch(e){

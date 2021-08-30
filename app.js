@@ -25,26 +25,19 @@ const log = util.Logger
 const startServer = () => {
     return new Promise((resolve, reject) => {
           let secureServer = null
-          try {
-           
-
-            // secureServer = https.createServer(credentials, app)
-        } catch (e) {
-
-            reject(e)
-        }
-        // start the web server with built-in database solution
+        // start the web server 
         let httpServer = http.createServer(app)
         // secureServer.listen(util.getHttpsPort(), () => {
             let stdServer = httpServer.listen(util.getHttpPort(), () => {
+
                 log.info(`${util.logPrefix('web')} standard port = ${util.getHttpPort()}`)
-                // console.log(`${util.logPrefix('web')} standard port = ${util.getHttpPort()}`)
+                
                 if (secureServer) {
                     log.info(`${util.logPrefix('web')} secure port = ${util.getHttpsPort()}`)
-                    //  console.log(`${util.logPrefix('web')} secure port = ${util.getHttpsPort()}`)
+                    
                 } else {
                     log.warn(`${util.logPrefix('web')} falling back to http for local development...`)
-                    // console.log(`${util.logPrefix('web')} falling back to http for local development...`)
+
                 }
             
                 resolve(secureServer || stdServer)
@@ -54,9 +47,7 @@ const startServer = () => {
 }
 
 
-
-
-// restores an existing database or backs up existing one
+// -------------------server------------
 startServer()
     .then((server) => {
         // return setupDatabase(server, app)
@@ -64,8 +55,6 @@ startServer()
         // you can chain multiple .then()
     })
     .catch((e) => {
-        // console.log('Failed to start server:')
         log.error('Failed to start server:')
         log.error(e)
-        // console.log(e)
     })

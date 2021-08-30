@@ -14,7 +14,7 @@ const auth = {}
 // @route     POST /api/v1/auth/register
 // @access    Public
 auth.register = asyncHandler(async (req, res, next) => {
-      const { username, email, contact, u_password } = req.body;
+      const { username, email, contact, password } = req.body;
        // #hash the user password
       
 
@@ -23,23 +23,22 @@ auth.register = asyncHandler(async (req, res, next) => {
         // --------------------------------------Create user
         if(!usr){
 
-           func.password_hash(u_password).then(password=>{
-               const user =  User.create({
-                username,
-                email,
-                contact,
-                password
+          const hash = await func.password_hash(password)
+
+           await User.create({
+                username:username,
+                email:email,
+                contact:contact,
+                password:hash
+                
                   // role
                 });
+
 
                return res.status(201).json({
                   success:true,
                   message:'user created'
                 })
-
-           }).catch(e => {
-              return res.status(500).json(e)
-           })
 
             
 
@@ -67,21 +66,24 @@ auth.login = asyncHandler(async (req, res, next) => {
 
   // --------------------------------Validate emil & password
   if (!email || !password) {
-    return next(new ErrorResponse('Please provide an email and password', 400));
+    // return next(new ErrorResponse('Please provide an email and password', 400));
+    return res.status(400).json({error:"Please provide an email and password"})
   }
 
   // -----------------------------------------------Check for user
   const user = await User.findOne({ where:{email:email}});
 
   if (!user) {
-    return next(new ErrorResponse('Invalid credentials', 401));
+    // return next(new ErrorResponse('Invalid credentials', 401));
+    return res.status(401).json({error:"Invalid credentials"})
   }
 
   // -----------------------------------------Check if password matches
   const isMatch = await func.comparePassword(password,user.password);
 
   if (!isMatch) {
-    return next(new ErrorResponse('Invalid credentials', 401));
+    // return next(new ErrorResponse('Invalid credentials', 401));
+    return res.status(401).json({error:"Invalid credentials"})
   }
 
   sendTokenResponse(user, 200, res);
@@ -167,20 +169,22 @@ auth.forgotPassword = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ where:{email: req.body.email} });
 
   if (!user) {
-    return res.status(404).json({error:'password is incorrect'})
+    return res.status(404).json({error:'Email is incorrect'})
   }
 
   // Get reset token
-  const resetToken = func.getResetPasswordToken(user.user_id);
+  const token = func.getResetPasswordToken();
+  user.resetPasswordToken = token.resetPasswordToken;
+  user.resetPasswordExpire = token.resetPasswordExpire;
 
   await user.save();
 
   // Create reset url
   const resetUrl = `${req.protocol}://${req.get(
     'host'
-  )}/api/v1/auth/resetpassword/${resetToken}`;
+  )}/api/v1/auth/resetpassword/${token.resetToken}`;
 
-  const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
+  const message = `You are receiving this email because you requested for password reset. Please click the link to reset password: \n\n ${resetUrl}`;
 
   try {
     await util.sendEmail({
@@ -197,7 +201,8 @@ auth.forgotPassword = asyncHandler(async (req, res, next) => {
 
     await user.save();
 
-    return next(new ErrorResponse('Email could not be sent', 500));
+    // return next(new ErrorResponse('Email could not be sent', 500));
+     return res.status(500).json({error:"Email could not be sent"})
   }
 
   res.status(200).json({
@@ -224,7 +229,8 @@ auth.resetPassword = asyncHandler(async (req, res, next) => {
   });
 
   if (!user) {
-    return next(new ErrorResponse('Invalid token', 400));
+    // return next(new ErrorResponse('Invalid token', 400));
+     return res.status(400).json({error:"Invalid token"})
   }
 
   // Set new password
@@ -239,7 +245,7 @@ auth.resetPassword = asyncHandler(async (req, res, next) => {
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create token
-  const token = func.getSignedJwtToken(user.user_id);
+  const token = func.getSignedJwtToken(user);
 
   const options = {
     expires: new Date(

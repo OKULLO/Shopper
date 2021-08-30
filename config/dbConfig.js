@@ -6,7 +6,7 @@ module.exports = {
   development: {
     username: process.env.DB_USER || 'root',
     password: process.env.DB_PASS || '',
-    database: process.env.DB_DATABASE || 'Nyumba',
+    database: process.env.DB_DATABASE || 'usermanager',
 
     host: '127.0.0.1',
     port: 3306,

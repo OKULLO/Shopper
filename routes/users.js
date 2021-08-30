@@ -13,19 +13,19 @@ module.exports =(router)=>{
 
     // const router = serv.Router({ mergeParams: true });
 
-    router.use(protect);
-    router.use(authorize('admin'));
+    // router.use(protect);
+    // router.use(authorize('admin'));
 
     router
-      .route('/')
-      .get(advancedResults(User), user.getUsers)
-      .post(user.createUser);
+      .route('/api/v1/users')
+      .get(protect,authorize('admin'),user.getUsers(User))
+      // .post(user.createUser);
 
     router
-      .route('/:id')
-      .get(user.getUser)
-      .put(user.updateUser)
-      .delete(user.deleteUser);
+      .route('/api/v1/users/:id',authorize('admin'))
+      .get(user.getUser,authorize('admin'))
+      .put(user.updateUser,authorize('admin'))
+      .delete(user.deleteUser,authorize('admin'));
 
 
 }

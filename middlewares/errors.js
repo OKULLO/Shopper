@@ -11,11 +11,16 @@
 
 
 //----------------------------------------------------General error handler
-errors.errorHandler =(error,req,res,next)=>{
+errors.errorHandler =(err,req,res,next)=>{
+     let error = { ...err };
+
+     error.message = err.message;
+
      const statusCode = res.statusCode===200 ?500:res.statusCode;
 
-     res.status(statusCode);
-     res.json({
+     
+     res.status(statusCode).json({
+         success: false,
          message:error.message,
          stack:process.env.NODE_ENV==='production'? '***':error.stack
      })
@@ -33,7 +38,6 @@ errors.uploadErr =(err,req, res ,next)=>{
         return;
     }
 }
-
 
 
 

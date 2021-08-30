@@ -11,24 +11,48 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      
     }
+
   };
   User.init({
+     id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: DataTypes.INTEGER
+      },
     user_id: {
       type:DataTypes.UUID,
       defaultValue:DataTypes.UUIDV4
     },
     username:{
       type: DataTypes.STRING,
-      allowNull:false
-    },
+      allowNull:false,
+      validate: {
+      notNull: {
+        msg: 'Please enter your username'
+      }
+    }
+  }
+    ,
     contact: {
       type: DataTypes.STRING,
-      allowNull:false
+      allowNull:false,
+      validate: {
+      notNull: {
+        msg: 'Please add a contact'
+      }
+    }
     },
     email: {
       type: DataTypes.STRING,
-      allowNull:false
+      allowNull:false,
+      validate: {
+      notNull: {
+        msg: 'Please enter your email address'
+      }
+    }
     },
     password: {
       type: DataTypes.STRING,

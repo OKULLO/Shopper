@@ -1,0 +1,27 @@
+version: '3.8'
+services:
+  usermanagement:
+    build:
+      context: .
+    env_file: ./config/.env
+    ports:
+      - 8001:9090
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+
+
+  db:
+    image: mysql:5.7.22
+    restart: always
+    env_file: ./config/.env
+    environment:
+      MYSQL_DATABASE: usermanager
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ''
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - .dbdata:/var/lib/mysql
+    ports:
+      - 33067:3306

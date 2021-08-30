@@ -23,7 +23,8 @@ auth.protect = asyncHandler(async (req, res, next) => {
 
   // Make sure token exists
   if (!token) {
-     return next(new ErrorResponse('Not authorized to access this route', 401));
+     // return next(new ErrorResponse('Not authorized to access this route', 401));
+      return res.status(401).json({error:"Not authorized to access this route"})
   }
 
   try {
@@ -31,6 +32,7 @@ auth.protect = asyncHandler(async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       req.user = decoded
+      // console.log(req.user)
 
       next();
   } catch (e) {
@@ -43,12 +45,13 @@ auth.protect = asyncHandler(async (req, res, next) => {
 auth.authorize = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return next(
-        new ErrorResponse(
-          `User role ${req.user.role} is not authorized to access this route`,
-          403
-        )
-      );
+      // return next(
+      //   new ErrorResponse(
+      //     `User role ${req.user.role} is not authorized to access this route`,
+      //     403
+      //   )
+      // );
+       return res.status(403).json({error:`User role ${req.user.role} is not authorized to access this route`})
     }
     next();
   };

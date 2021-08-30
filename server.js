@@ -13,6 +13,7 @@ const helmet = require('helmet')
 
 const util = require('./utils')
 const db = require('./database/models');
+const setupDatabase = require('./db')
 
 
 const log = util.Logger
@@ -48,9 +49,10 @@ server.use(express.json());
 server.use(bodyparser.urlencoded({extended: false}));
 
 server.use(morgan('common'));
-server.use(cors({
-    origin:process.env.CORS_ORIGIN
-}));
+// server.use(cors({
+//     origin:process.env.CORS_ORIGIN
+// }));
+server.use(cors());
 
 
 // ---------------------static file path----------------------------
@@ -82,8 +84,6 @@ routeFiles.forEach((file) => {
 
 
 // ------------------------------------------------------------------------- Database
-db.sequelize.authenticate()
-     .then(()=>log.info('database connection sucessfull'))
-      .catch(e=>log.error(`database connection error:${e}`))
+setupDatabase(db)
 
 module.exports = server

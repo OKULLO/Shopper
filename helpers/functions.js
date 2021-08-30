@@ -39,28 +39,32 @@ self.comparePassword = async (passtocompare,hashvalue)=>{
 }
 
 // Sign JWT and return
-self.getSignedJwtToken = (user_id)=> {
-  return jwt.sign({ id: user_id }, process.env.JWT_SECRET, {
+self.getSignedJwtToken = (user)=> {
+  return jwt.sign({ id: user.user_id,role:user.role}, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE
   });
 };
 
 
 // Generate and hash password token
-self.getResetPasswordToken = (user)=> {
+self.getResetPasswordToken = ()=> {
+  const token ={}
   // Generate token
   const resetToken = crypto.randomBytes(20).toString('hex');
 
+  token.resetToken
+
   // Hash token and set to resetPasswordToken field
-  user.resetPasswordToken = crypto
+  token.resetPasswordToken = crypto
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
 
   // Set expire
-  user.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
+  token.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
-  return resetToken;
+
+  return token
 };
 
 
