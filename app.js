@@ -24,25 +24,26 @@ const log = util.Logger
 */
 const startServer = () => {
     return new Promise((resolve, reject) => {
-          let secureServer = null
+        let secureServer = null
         // start the web server 
         let httpServer = http.createServer(app)
+        console.log(httpServer.address())
         // secureServer.listen(util.getHttpsPort(), () => {
-            let stdServer = httpServer.listen(util.getHttpPort(), () => {
+        let stdServer = httpServer.listen(util.getHttpPort(), () => {
 
-                log.info(`${util.logPrefix('web')} standard port = ${util.getHttpPort()}`)
-                
-                if (secureServer) {
-                    log.info(`${util.logPrefix('web')} secure port = ${util.getHttpsPort()}`)
-                    
-                } else {
-                    log.warn(`${util.logPrefix('web')} falling back to http for local development...`)
-
-                }
+            log.info(`${util.logPrefix('web')} standard port = ${util.getHttpPort()}`)
             
-                resolve(secureServer || stdServer)
-            })
-        // })
+            if (secureServer) {
+                log.info(`${util.logPrefix('web')} secure port = ${util.getHttpsPort()}`)
+                
+            } else {
+                log.warn(`${util.logPrefix('web')} falling back to http for local development...`)
+
+            }
+        
+            resolve(secureServer || stdServer)
+        })
+    // })
     })
 }
 

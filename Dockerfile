@@ -1,13 +1,18 @@
-FROM node:13-alpine
+FROM node:14
 
-WORKDIR /app
+WORKDIR ./app
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
-RUN npm install 
+RUN npm install
+# If you are building your code for production
+# RUN npm ci --only=production
 
-COPY . .
+# Bundle app source
+COPY . /app
+
 
 EXPOSE 9090
 
-CMD npm run Dev
+CMD [ "npm", "run","Dev" ]
+CMD [ "npx", "sequelize db:migrate" ]

@@ -45,7 +45,7 @@ auth.register = asyncHandler(async (req, res, next) => {
         }else{
           return res.status(403).json({
             success:false,
-            message:'user already exists'
+            error:'user already exists'
           })
         }
         
@@ -67,7 +67,8 @@ auth.login = asyncHandler(async (req, res, next) => {
   // --------------------------------Validate emil & password
   if (!email || !password) {
     // return next(new ErrorResponse('Please provide an email and password', 400));
-    return res.status(400).json({error:"Please provide an email and password"})
+    // return res.status(400).json({error:"Please provide an email and password"})
+    return res.json({error:"Please provide an email and password"})
   }
 
   // -----------------------------------------------Check for user
@@ -75,7 +76,8 @@ auth.login = asyncHandler(async (req, res, next) => {
 
   if (!user) {
     // return next(new ErrorResponse('Invalid credentials', 401));
-    return res.status(401).json({error:"Invalid credentials"})
+    // return res.status(401).json({error:"Invalid credentials"})
+    return res.json({error:"Invalid credentials"})
   }
 
   // -----------------------------------------Check if password matches
@@ -83,7 +85,8 @@ auth.login = asyncHandler(async (req, res, next) => {
 
   if (!isMatch) {
     // return next(new ErrorResponse('Invalid credentials', 401));
-    return res.status(401).json({error:"Invalid credentials"})
+    // return res.status(401).json({error:"Invalid credentials"})
+    return res.json({error:"Invalid credentials"})
   }
 
   sendTokenResponse(user, 200, res);
@@ -123,7 +126,7 @@ auth.getMe = asyncHandler(async (req, res, next) => {
 // @access    Private
 auth.updateDetails = asyncHandler(async (req, res, next) => {
   const fieldsToUpdate = {
-    username: req.body.name,
+    username: req.body.username,
     email: req.body.email,
     contact:req.body.contact
   };
@@ -169,7 +172,7 @@ auth.forgotPassword = asyncHandler(async (req, res, next) => {
   const user = await User.findOne({ where:{email: req.body.email} });
 
   if (!user) {
-    return res.status(404).json({error:'Email is incorrect'})
+    return res.status(404).json({success:false,error:'Email is incorrect'})
   }
 
   // Get reset token

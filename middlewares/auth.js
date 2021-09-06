@@ -2,6 +2,9 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('../middlewares/async');
 const ErrorResponse = require('../utils/errorResponse');
 const User = require('../database/models/user');
+const util = require('../utils')
+
+const log = util.Logger
 
 const auth = {}
 // Protect routes
@@ -37,6 +40,7 @@ auth.protect = asyncHandler(async (req, res, next) => {
       next();
   } catch (e) {
      // return next(new ErrorResponse('Not authorized to access this route', 401));
+     log.error(e)
      return res.status(500).json(e)
   }
 });

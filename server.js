@@ -18,6 +18,7 @@ const setupDatabase = require('./db')
 
 const log = util.Logger
 log.setLevel('debug')
+
 const morgan  = require('morgan');
 const dotenv = require('dotenv');
 const bodyparser = require('body-parser');

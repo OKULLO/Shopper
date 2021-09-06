@@ -4,13 +4,15 @@ const fs = require('fs');
 
 module.exports = {
   development: {
-    username: process.env.DB_USER || 'root',
-    password: process.env.DB_PASS || '',
-    database: process.env.DB_DATABASE || 'usermanager',
+    username: process.env.DB_USER || "root" ,
+    password: process.env.DB_PASS || "" ,
+    database: process.env.DB_DATABASE || "usermanager",
+
+    // host: 'db',
 
     host: '127.0.0.1',
-    port: 3306,
-    dialect: 'mysql',
+    // port: 3306,
+    dialect: 'postgres',
     dialectOptions: {
       bigNumberStrings: true
     }

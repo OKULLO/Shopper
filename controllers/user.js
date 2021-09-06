@@ -7,7 +7,7 @@ const { User } = require('../database/models');
 // @access    Private/Admin
 exports.getUsers = (model)=>asyncHandler(async (req, res, next) => {
   // res.status(200).json(res.advancedResults);
-    let query;
+  let query;
 
   // Copy req.query
   const reqQuery = { ...req.query };

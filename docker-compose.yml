@@ -17,9 +17,11 @@ services:
     restart: always
     env_file: ./config/.env
     environment:
-      MYSQL_DATABASE: usermanager
+      DB_DATABASE: usermanager
       MYSQL_USER: root
-      MYSQL_PASSWORD: ''
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+      DB_HOSTNAME: db
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - .dbdata:/var/lib/mysql
