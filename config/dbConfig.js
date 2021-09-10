@@ -5,14 +5,14 @@ const fs = require('fs');
 module.exports = {
   development: {
     username: process.env.DB_USER || "root" ,
-    password: process.env.DB_PASS || "" ,
+    password: process.env.DB_PASS || "root" ,
     database: process.env.DB_DATABASE || "usermanager",
 
     // host: 'db',
 
-    host: '127.0.0.1',
-    // port: 3306,
-    dialect: 'postgres',
+    host: 'db',
+    port: 3306,
+    dialect: 'mysql',
     dialectOptions: {
       bigNumberStrings: true
     }

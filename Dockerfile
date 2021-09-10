@@ -14,5 +14,4 @@ COPY . /app
 
 EXPOSE 9090
 
-CMD [ "npm", "run","Dev" ]
-CMD [ "npx", "sequelize db:migrate" ]
+ENTRYPOINT ["sh", "entrypoint.sh"]
