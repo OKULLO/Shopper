@@ -23,6 +23,6 @@ services:
       MYSQL_ROOT_PASSWORD: root
       DB_HOSTNAME: db
     volumes:
-      - ./.dbdata/:/var/lib/mysql
+      - ../.dbdata:/var/lib/mysql
     ports:
       - 33067:3306
