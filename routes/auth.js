@@ -9,6 +9,9 @@ const { protect } = require('../middlewares/auth');
 
 
 module.exports = (route)=>{ 
+      route.get('/', (req, res) => {
+  res.json({'message': 'ok'});
+});
   
       route.post('/api/v1/auth/register', auth.register);
       route.post('/api/v1/auth/login', auth.login);
