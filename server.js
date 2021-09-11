@@ -74,6 +74,7 @@ server.use(require('./middlewares/errors').uploadErr)
 
 //error handler middleware
 server.use(require('./middlewares/errors').errorHandler);
+server.use(require('./middlewares/errors').ignoreFavicon);
 
 
 // ------------------------------------------------------------------------- Routes

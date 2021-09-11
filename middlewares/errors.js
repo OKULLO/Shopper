@@ -26,6 +26,13 @@ errors.errorHandler =(err,req,res,next)=>{
      })
  }
 
+ errors.ignoreFavicon =(req, res, next)=> {
+  if (req.originalUrl.includes('favicon.ico')) {
+    res.status(204).end()
+  }
+  next();
+}
+
  //------------------------------------------------file upload middleware validation
 
 errors.uploadErr =(err,req, res ,next)=>{
