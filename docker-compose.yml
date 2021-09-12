@@ -27,5 +27,3 @@ services:
     ports:
       - 33067:3306
       
-volumes:
-  .dbdata:
