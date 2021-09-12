@@ -26,3 +26,6 @@ services:
       - .dbdata:/var/lib/mysql
     ports:
       - 33067:3306
+      
+volumes:
+  .dbdata:
