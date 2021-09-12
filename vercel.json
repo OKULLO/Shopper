@@ -8,5 +8,3 @@
     { "src": "/(.*)", "dest": "/app.js" }
   ]
 }
-
-// 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
